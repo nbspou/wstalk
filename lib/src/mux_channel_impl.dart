@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:logging/logging.dart';
 import 'package:wstalk/src/mux_connection_impl.dart';
 import 'package:wstalk/src/mux_channel.dart';
 
 class MuxChannelImpl extends Stream<Uint8List> implements MuxChannel {
+  static Logger _log = new Logger('Switchboard.Mux');
+
   final MuxConnectionImpl connection;
   final int channelId;
   MuxChannelImpl(this.connection, this.channelId);

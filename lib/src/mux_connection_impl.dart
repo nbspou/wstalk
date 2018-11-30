@@ -10,11 +10,14 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:logging/logging.dart';
 import 'package:wstalk/src/mux_connection.dart';
 import 'package:wstalk/src/mux_channel.dart';
 import 'package:wstalk/src/mux_channel_impl.dart';
 
 class MuxConnectionImpl implements MuxConnection {
+  static Logger _log = new Logger('Switchboard.Mux');
+
   WebSocket _webSocket;
   Function(MuxChannel channel, Uint8List payLoad) _onChannel;
   Function() _onClose;
@@ -82,7 +85,7 @@ class MuxConnectionImpl implements MuxConnection {
       try {
         onClose();
       } catch (error, stack) {
-        // TODO: LOG: Error in close callback.
+        _log.severe("$error\n$stack");
       }
     }
     List<MuxChannelImpl> channels =
@@ -93,7 +96,7 @@ class MuxConnectionImpl implements MuxConnection {
       try {
         channel.channelRemoteClosed();
       } catch (error, stack) {
-        // TODO: LOG: Error closing channels.
+        _log.severe("$error\n$stack");
       }
     }
   }
@@ -124,7 +127,8 @@ class MuxConnectionImpl implements MuxConnection {
         completer.complete();
       }
     } catch (error, stack) {
-      // TODO: LOG: Error. This should not happen.
+        // This should not happen.
+        _log.severe("$error\n$stack");
       if (!completer.isCompleted) {
         completer.completeError(error, stack);
       }
@@ -147,7 +151,8 @@ class MuxConnectionImpl implements MuxConnection {
         cancelOnError: true,
       );
     } catch (error, stack) {
-      // TODO: LOG: Error while trying to listen to WebSocket.
+      // Error while trying to listen to WebSocket.
+      _log.severe("Error while trying to listen to WebSocket: $error\n$stack");
       close();
     }
   }
@@ -163,14 +168,14 @@ class MuxConnectionImpl implements MuxConnection {
       // failure in case any of these reserved bits are set, useful for forced breaking of compatibility (changing channel Id format)
       bool reservedBreakingFlags = (flags & 0xCD) != 0;
       if (reservedBreakingFlags) {
-        // TODO: LOG: Remote is using protocol features which are not supported.
+        _log.severe("Remote is using protocol features which are not supported.");
         close();
         return;
       }
       // these bits are reserved for other protocol behaviour changes, which don't impact compatibility
       bool unknownFlags = (flags & 0x80) != 0;
       if (unknownFlags) {
-        // TODO: LOG: Warning: Remote is using an unknown extension.
+        _log.warning("Remote is using an unknown extension.");
       }
       int systemCommand = (flags & 0x30) >>
           4; // 0: data, 1: open channel, 2: close channel, 3: reserved.
@@ -193,7 +198,7 @@ class MuxConnectionImpl implements MuxConnection {
           if (channel != null) {
             channel.receivedFrame(subFrame);
           } else {
-            // TODO: LOG: Error. Remote attempts to communicate on a closed channel.
+            _log.severe("Remote attempts to communicate on a closed channel.");
             close();
           }
           break;
@@ -210,7 +215,7 @@ class MuxConnectionImpl implements MuxConnection {
             }
             _onChannel(channel, subFrame);
           } else {
-            // TODO: LOG: Error. Remote attempts to open a channel which is already open or closing.
+            _log.severe("Remote attempts to open a channel which is already open or closing.");
             close();
           }
           break;
@@ -221,7 +226,7 @@ class MuxConnectionImpl implements MuxConnection {
             if (_channels.remove(channelId) == null) {
               // This is the confirmation
               if (_closingChannels.remove(channelId) == null) {
-                // TODO: LOG: Attempt to close channel twice. Protocol violation, close connection.
+                _log.severe("Attempt to close channel twice. Protocol violation, close connection.");
                 close();
               }
             } else {
@@ -241,17 +246,17 @@ class MuxConnectionImpl implements MuxConnection {
               }
             }
           } else {
-            // TODO: LOG: Error. Invalid channel specified by remote.
+            _log.severe("Invalid channel specified by remote.");
             close();
           }
           break;
         case 3:
-          // TODO: LOG: Error. Invalid system command.
+          _log.severe("Invalid system command.");
           close();
           break;
       }
     } catch (error, stack) {
-      // TODO: LOG: Error processing frame.
+      _log.severe("Error processing frame.");
       close();
     }
   }

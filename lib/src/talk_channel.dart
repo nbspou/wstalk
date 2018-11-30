@@ -151,7 +151,7 @@ class TalkChannel extends Stream<TalkMessage> {
       Uint8List subFrame = buffer.asUint8List(offset + o);
       String procedureId = utf8.decode(procedureIdRaw.takeWhile((c) => c != 0).toList());
       // This message expects a stream response (if not set, can only send timeout extend stream response)
-      // bool expectStreamResponse = (flags & 0x08) != 0; // not necessary?
+      bool expectStreamResponse = (flags & 0x08) != 0; // not necessary?
       // This message is a stream response (a non-stream-response signals end-of-stream)
       bool isStreamResponse = (flags & 0x30) == 0x10;
       // Timeout extend message (must be a stream response) (an extend message with a request id extends the timeout)
@@ -265,7 +265,7 @@ class TalkChannel extends Stream<TalkMessage> {
     if (hasProcedureId) flags |= 0x01;
     if (hasRequestId) flags |= 0x02;
     if (hasResponseId) flags |= 0x04;
-    // if (expectStreamResponse) flags |= 0x08; // not necessary?
+    if (expectStreamResponse) flags |= 0x08; // not necessary?
     if (isStreamResponse) flags |= 0x10;
     if (isAbortOrExtend) flags |= 0x20;
 
@@ -351,6 +351,7 @@ class TalkChannel extends Stream<TalkMessage> {
     return sendStreamRequest(procedureId, data, responseId: replying.requestId);
   }
 
+  // Redundant, use expectStreamResponse
   void replyMessageStream(
       TalkMessage replying, String procedureId, Uint8List data) {
     _sendingResponse(replying.requestId, true);
@@ -358,6 +359,7 @@ class TalkChannel extends Stream<TalkMessage> {
         responseId: replying.requestId, isStreamResponse: true);
   }
 
+  // Redundant, use expectStreamResponse
   Future<TalkMessage> replyRequestStream(
       TalkMessage replying, String procedureId, Uint8List data) {
     _sendingResponse(replying.requestId, true);
@@ -365,6 +367,7 @@ class TalkChannel extends Stream<TalkMessage> {
         responseId: replying.requestId, isStreamResponse: true);
   }
 
+  // Redundant, use expectStreamResponse
   Stream<TalkMessage> replyStreamRequestStream(
       TalkMessage replying, String procedureId, Uint8List data) {
     _sendingResponse(replying.requestId, true);
@@ -375,6 +378,7 @@ class TalkChannel extends Stream<TalkMessage> {
   void replyEndOfStream(TalkMessage replying,
       [String procedureId, Uint8List data]) {
     // Data is not part of the stream, but post-stream. In the Dart implementation, this is thrown as a TalkEndOfStream error to the message stream.
+    _sendingResponse(replying.requestId, false);
     replyMessage(replying, procedureId, data ?? new Uint8List(0));
   }
 

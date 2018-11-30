@@ -4,16 +4,19 @@ class TalkMessage {
   final String procedureId;
   final int requestId;
   final int responseId;
+  final bool expectStreamResponse;
   final Uint8List data;
-  const TalkMessage(
-      this.procedureId, this.requestId, this.responseId, this.data);
+
+  const TalkMessage(this.procedureId, this.requestId, this.responseId,
+      this.expectStreamResponse, this.data);
   bool operator ==(dynamic message) {
     if (!(message is TalkMessage)) {
       return false;
     }
     if (message.procedureId != procedureId ||
         message.requestId != requestId ||
-        message.responseId != responseId) {
+        message.responseId != responseId ||
+        message.expectStreamResponse != expectStreamResponse) {
       return false;
     }
     bool equalData = message.data == data;
@@ -35,11 +38,14 @@ class TalkMessage {
     return procedureId.hashCode ^
         requestId.hashCode ^
         responseId.hashCode ^
+        expectStreamResponse.hashCode ^
         data.hashCode;
   }
 
   @override
   String toString() {
-    return "TalkMessage: $procedureId, $requestId, $responseId, $data";
+    return "TalkMessage: $procedureId, $requestId, $responseId, $expectStreamResponse, $data";
   }
 }
+
+/* end of file */
